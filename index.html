@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>enigma</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, sans-serif;
+      transition: background 0.4s, color 0.4s;
+    }
+
+    body.dark { background: #000000; color: #ffffff; }
+
+    /* Botão lua */
+    #modeBtn {
+      position: fixed;
+      top: 1.1rem;
+      right: 1.2rem;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+      line-height: 1;
+      padding: 0;
+      z-index: 10;
+    }
+    #modeBtn:hover { opacity: 1; }
+
+    /* Fase */
+    #phaseLabel {
+      position: fixed;
+      top: 1.1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      opacity: 0.45;
+      z-index: 10;
+    }
+
+    /* Centro */
+    .center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.4rem;
+      width: 100%;
+      max-width: 460px;
+      padding: 1rem;
+    }
+
+    #hint {
+      font-size: 0.85rem;
+      opacity: 0.55;
+      text-align: center;
+      letter-spacing: 0.03em;
+      line-height: 1.5;
+      min-height: 2.5em;
+      transition: opacity 0.3s;
+    }
+
+    /* Fase 2: fórmula matemática */
+    #hint.math {
+      font-size: 1.1rem;
+      opacity: 0.7;
+    }
+
+    /* Fase 3: hint com estilo mono */
+    #hint.mono {
+      font-family: monospace;
+      font-size: 0.8rem;
+      opacity: 0.6;
+      white-space: pre-line;
+    }
+
+    #answerInput {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid currentColor;
+      background: transparent;
+      color: inherit;
+      font-size: 1.15rem;
+      padding: 0.5rem 0.3rem;
+      text-align: center;
+      outline: none;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    #answerInput:focus { opacity: 1; }
+    #answerInput::placeholder { opacity: 0.3; font-style: italic; }
+
+    /* Overlay de fim de jogo */
+    #endOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      flex-direction: column;
+    }
+    #endOverlay img {
+      max-width: 90%;
+      max-height: 80vh;
+      object-fit: contain;
+    }
+    #endOverlay audio {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="modeBtn" title="Modo noturno">🌙</button>
+  <span id="phaseLabel">fase 1</span>
+
+  <div class="center">
+    <p id="hint">a resposta é mais óbvia do que você pensa</p>
+    <input
+      id="answerInput"
+      type="text"
+      placeholder="resposta..."
+      autocomplete="off"
+      spellcheck="false"
+    />
+  </div>
+
+  <!-- Overlay de fim de jogo -->
+  <div id="endOverlay">
+    <img src="https://www.dropbox.com/scl/fi/oxf7mlfvnrsta3yk31pma/gorila.jpeg?rlkey=7ae4j57dk4x0te7xn06h28i78&st=88m2ovtj&raw=1" alt="Gorila" />
+    <audio id="endAudio" src="https://www.dropbox.com/scl/fi/lhgh3ntun2t1muniimqrl/gemidao.mp3?rlkey=bj0atjl2p2mt4scro9dcmqvci&st=0hwhh134&raw=1" controls></audio>
+  </div>
+
+<script>
+  // ── estado ──────────────────────────────────────────
+  let phase = 1;
+
+  const phaseLabel = document.getElementById("phaseLabel");
+  const hint       = document.getElementById("hint");
+  const input      = document.getElementById("answerInput");
+  const modeBtn    = document.getElementById("modeBtn");
+  const body       = document.body;
+  const endOverlay = document.getElementById("endOverlay");
+  const endAudio   = document.getElementById("endAudio");
+
+  // ── modo noturno ─────────────────────────────────────
+  modeBtn.addEventListener("click", () => {
+    body.classList.toggle("dark");
+  });
+
+  // ── fases ────────────────────────────────────────────
+  const phases = {
+    1: {
+      label: "fase 1",
+      hintClass: "",
+      hint: "a resposta é mais óbvia do que você pensa",
+      check: v => v === "enigma" || v === "resposta"
+    },
+    2: {
+      label: "fase 2",
+      hintClass: "math",
+      hint: "\\frac{(125^2 - 75^2)}{(25^2 - 15^2)} \\times \\sqrt{144 - (35 - 26)}",
+      check: v => v === "121"
+    },
+    3: {
+      label: "fase 3",
+      hintClass: "mono",
+      hint: "umqualqueai = 5nw51kw5213\n1e2ao4ar12x4w5231",
+      check: v => v === "coqueia"
+    }
+  };
+
+  function goToPhase(n) {
+    phase = n;
+    const p = phases[n];
+    phaseLabel.textContent = p.label;
+    hint.className = p.hintClass;
+
+    if (p.hintClass === "math" && typeof katex !== "undefined") {
+      hint.innerHTML = "";
+      katex.render(p.hint, hint, { throwOnError: false, displayMode: true });
+    } else {
+      hint.textContent = p.hint;
+    }
+
+    input.value = "";
+    input.focus();
+  }
+
+  // ── finalizar jogo ──────────────────────────────────
+  function finishGame() {
+    // Esconde o input e o hint
+    document.querySelector('.center').style.display = 'none';
+    phaseLabel.style.display = 'none';
+    
+    // Mostra o overlay
+    endOverlay.style.display = 'flex';
+    
+    // Toca o áudio
+    endAudio.play();
+    
+    // Quando o áudio acabar, fecha o navegador
+    endAudio.addEventListener('ended', () => {
+      window.close();
+      // Fallback: tenta fechar a janela
+      setTimeout(() => {
+        document.body.innerHTML = '<h1 style="color:#fff;background:#000;text-align:center;margin-top:50vh;">Fim</h1>';
+      }, 1000);
+    });
+  }
+
+  // ── verificar resposta ────────────────────────────────
+  function checkAnswer() {
+    const val = input.value.trim().toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    if (!val) return;
+
+    const current = phases[phase];
+    if (current.check(val)) {
+      if (phase < 3) {
+        goToPhase(phase + 1);
+      } else {
+        // fase 3 correta → finaliza o jogo
+        finishGame();
+      }
+    }
+    // sem feedback se errar
+  }
+
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") checkAnswer();
+  });
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+</body>
+</html>
