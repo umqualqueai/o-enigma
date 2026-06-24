@@ -127,6 +127,14 @@
       width: 80%;
       max-width: 400px;
     }
+
+    /* Bloqueio de seleção */
+    body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -152,6 +160,37 @@
   </div>
 
 <script>
+  // ── Proteção contra inspeção (simples) ──────────────
+  // Bloqueia clique direito
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    return false;
+  });
+
+  // Bloqueia teclas de atalho comuns
+  document.addEventListener('keydown', function(e) {
+    // F12
+    if (e.key === 'F12') {
+      e.preventDefault();
+      return false;
+    }
+    // Ctrl+Shift+I, Ctrl+Shift+J
+    if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) {
+      e.preventDefault();
+      return false;
+    }
+    // Ctrl+U (código fonte)
+    if (e.ctrlKey && e.key === 'u') {
+      e.preventDefault();
+      return false;
+    }
+    // Ctrl+Shift+C
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+      e.preventDefault();
+      return false;
+    }
+  });
+
   // ── estado ──────────────────────────────────────────
   let phase = 1;
 
@@ -180,7 +219,7 @@
       label: "fase 2",
       hintClass: "math",
       hint: "\\sqrt{144} + 5^2 \\times 4 - 13^2 \\div 13 + \\sqrt{9} \\times 3",
-      check: v => parseFloat(v) === 121
+      check: v => parseFloat(v) === 108
     },
     3: {
       label: "fase 3",
